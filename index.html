@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>طباعة شيكات ساب — Epson LQ-350</title>
+<style>
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#1c2430; --muted:#5f6b7a; --line:#dde3ea;
+  --accent:#0f766e; --accent-2:#e6f4f2; --danger:#b42318; --warn:#b54708; --warn-bg:#fff4e5;
+  --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Segoe UI",Tahoma,system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+h1{font-size:18px;margin:0;font-weight:700}
+h2{font-size:15px;margin:0 0 10px;font-weight:700}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header .brand{display:flex;align-items:center;gap:10px}
+header .brand .dot{width:12px;height:12px;border-radius:50%;background:var(--accent)}
+header .spacer{flex:1}
+.btn{border:1px solid var(--line);background:var(--panel);padding:8px 14px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:background .15s,border-color .15s}
+.btn:hover{background:#f6f8fa;border-color:#c9d2dc}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.btn.primary:hover{background:#0d655e}
+.btn.danger{color:var(--danger)}
+.btn.active{background:var(--accent-2);border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+kbd{font-family:inherit;font-size:11px;background:#eef2f6;border:1px solid #d5dce4;border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--ink)}
+.btn.primary kbd{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);color:#fff;font-weight:400}
+
+/* ---------- layout ---------- */
+main{display:grid;grid-template-columns:380px 1fr;gap:18px;padding:18px 20px;align-items:start}
+@media (max-width:1000px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.form-grid .full{grid-column:1 / -1}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+label.f>input,label.f>select,label.f>textarea{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;color:var(--ink);font-size:14px;width:100%}
+label.f>input:focus,label.f>select:focus{outline:2px solid #99d5ce;border-color:var(--accent)}
+input[type=number]{direction:ltr;text-align:left}
+.amount-big{font-size:18px !important;font-weight:700;direction:ltr;text-align:left}
+.checks{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:6px}
+.checks label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.words-preview{background:#f6f8fa;border:1px dashed var(--line);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:13px;min-height:38px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* ---------- preview ---------- */
+.preview-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.preview-head .spacer{flex:1}
+.zoom{display:flex;align-items:center;gap:6px}
+.zoom input{width:120px}
+.sheet-scroll{overflow:auto;background:#e9edf1;border-radius:10px;padding:18px;border:1px solid var(--line)}
+.sheet-wrap{position:relative;margin:0 auto}
+.sheet{position:absolute;left:0;top:0;width:209mm;height:90mm;background:#fff;transform-origin:0 0;box-shadow:0 2px 10px rgba(0,0,0,.18);overflow:hidden;direction:ltr}
+.sheet .mock{position:absolute;inset:0;pointer-events:none;color:#8f9aa8;font-family:Arial,Tahoma,sans-serif;background-size:100% 100%;background-repeat:no-repeat}
+.sheet .mock.has-bg > *{display:none}
+.mock .t{position:absolute;white-space:nowrap;line-height:1}
+.mock .ln{position:absolute;height:0;border-top:0.25mm solid #b9c2cc}
+.mock .box{position:absolute;border:0.7mm solid #b9c2cc}
+.mock .stripes{position:absolute;inset:0;background:repeating-linear-gradient(180deg,rgba(150,160,175,.10) 0,rgba(150,160,175,.10) .25mm,transparent .25mm,transparent 1.1mm)}
+.sheet .content{position:absolute;inset:0;transform-origin:0 0}
+.field{position:absolute;color:#000;line-height:1;white-space:nowrap}
+.field .line{position:absolute;left:0;right:0;top:0;height:1em;line-height:1;white-space:nowrap;overflow:visible}
+.field .line.l2{top:auto}
+.field .stars{letter-spacing:.02em}
+.field.cross{border-top:.3mm solid #000;border-bottom:.3mm solid #000;padding:.7mm 1.2mm;text-align:center;transform-origin:center}
+.field.cross .line{position:static;height:auto}
+.sheet.calib .field{cursor:move;outline:.25mm dashed rgba(15,118,110,.55);outline-offset:.4mm}
+.sheet.calib .field.selected{outline:.45mm solid var(--accent);background:rgba(15,118,110,.06)}
+.sheet.calib .field::before{content:attr(data-label);position:absolute;top:-2.6mm;left:0;font:2mm/1 Tahoma,Arial;color:var(--accent);white-space:nowrap}
+.rulers{position:absolute;inset:0;pointer-events:none}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+
+/* ---------- calibration panel ---------- */
+.calib-panel{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+.calib-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.nudge{display:grid;grid-template-columns:repeat(3,36px);grid-template-rows:repeat(3,36px);gap:4px;direction:ltr;justify-content:start}
+.nudge button{border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;font-size:16px}
+.nudge button:hover{background:#f0f4f7}
+.nudge .c{background:transparent;border:none;font-size:11px;color:var(--muted);cursor:default}
+.nudge .c:hover{background:transparent}
+.field-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.field-tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px;cursor:pointer}
+.field-tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.offset-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+.hint{background:var(--warn-bg);border:1px solid #fbd9a8;color:var(--warn);border-radius:8px;padding:8px 10px;font-size:12.5px;margin-top:10px}
+
+/* ---------- dialogs ---------- */
+dialog{border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:0;width:min(860px,94vw);max-height:90vh;color:var(--ink)}
+dialog::backdrop{background:rgba(16,24,40,.45)}
+.dlg-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1}
+.dlg-head h2{margin:0;flex:1}
+.dlg-body{padding:16px 18px;overflow:auto;max-height:calc(90vh - 60px)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+th{background:#f6f8fa;font-weight:700;color:var(--muted)}
+td.num{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
+.help ol{padding-right:20px}
+.help li{margin-bottom:8px}
+.help h3{font-size:14px;margin:16px 0 6px;color:var(--accent)}
+.help code{background:#eef2f6;border-radius:4px;padding:0 5px;direction:ltr;unicode-bidi:embed}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.settings-grid{grid-template-columns:1fr}}
+
+/* ---------- after-print bar ---------- */
+#afterBar{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1c2430;color:#fff;padding:12px 16px;border-radius:12px;display:none;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:50}
+#afterBar.show{display:flex}
+#afterBar .btn{background:#2b3648;border-color:#3a4658;color:#fff}
+#afterBar .btn.primary{background:var(--accent);border-color:var(--accent)}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#1c2430;color:#fff;padding:8px 14px;border-radius:10px;display:none;z-index:60;font-size:13px}
+
+#printRoot{display:none}
+
+/* ---------- print ---------- */
+/* default print page = A4 portrait; the cheque content sits at the page's top-left corner.
+   buildPrint() overrides the page size at print time (see #pageStyle) */
+@page{size:210mm 297mm;margin:0}
+@media print{
+  html,body{margin:0 !important;padding:0 !important;width:var(--pw,210mm);height:var(--ph,297mm);overflow:hidden;background:#fff}
+  body.printing > *:not(#printRoot){display:none !important}
+  #printRoot{display:block;position:absolute;left:0;top:0;width:var(--pw,210mm);height:var(--ph,297mm);overflow:hidden}
+  #printRoot img{position:absolute;left:0;top:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="dot"></span><h1>طباعة شيكات ساب <span class="muted small">Epson LQ-350</span></h1></div>
+  <div class="spacer"></div>
+  <button class="btn" id="btnHelp">دليل الإعداد</button>
+  <button class="btn" id="btnLog">السجل</button>
+  <button class="btn" id="btnSettings">الإعدادات</button>
+  <button class="btn" id="btnCalib">وضع المعايرة</button>
+  <button class="btn" id="btnPreview">معاينة ما سيُطبع</button>
+  <button class="btn" id="btnTest">طباعة صفحة اختبار</button>
+  <button class="btn primary" id="btnPrint">طباعة الشيك <kbd>Ctrl+P</kbd></button>
+</header>
+
+<main>
+  <!-- ================= FORM ================= -->
+  <section class="card">
+    <h2>بيانات الشيك</h2>
+    <div class="form-grid">
+      <label class="f">رقم الشيك <span class="small">(للسجل فقط، لا يُطبع)</span>
+        <input id="chequeNo" type="text" inputmode="numeric" placeholder="00878770" style="direction:ltr;text-align:left">
+      </label>
+      <label class="f">التاريخ
+        <input id="dateInput" type="date">
+      </label>
+      <label class="f full">المستفيد (ادفعوا لأمر)
+        <input id="payeeInput" type="text" list="payeeList" placeholder="اسم المستفيد كما سيُطبع" autocomplete="off">
+        <datalist id="payeeList"></datalist>
+      </label>
+      <label class="f">المبلغ (ريال)
+        <input id="amountInput" type="text" inputmode="decimal" class="amount-big" placeholder="0.00">
+      </label>
+      <label class="f">مكان التحرير
+        <input id="placeInput" type="text" placeholder="الأحساء">
+      </label>
+      <label class="f">لغة المبلغ كتابةً
+        <select id="langSelect">
+          <option value="ar">عربي (تفقيط)</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <label class="f">ملاحظة <span class="small">(للسجل فقط)</span>
+        <input id="noteInput" type="text" placeholder="مثال: دفعة مورد">
+      </label>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" id="saudiChk"> إضافة كلمة «سعودي»</label>
+      <label><input type="checkbox" id="starsChk"> نجوم حماية (***)</label>
+      <label><input type="checkbox" id="crossChk"> طباعة «للمستفيد الأول»</label>
+    </div>
+    <div class="words-preview" id="wordsPreview"></div>
+    <div class="actions">
+      <button class="btn primary" id="btnPrint2">طباعة الشيك</button>
+      <button class="btn" id="btnClear">مسح الحقول</button>
+    </div>
+    <div class="hint" id="feedNote"></div>
+    <p class="muted small" style="margin:10px 0 0">في نافذة الطباعة: الطابعة EPSON LQ-350، حجم الورق <b>A4</b>، التخطيط <b>عمودي</b>، الهوامش <b>بدون</b>، المقياس 100٪، وأزل علامة الرؤوس والتذييلات. طريقة الإدخال تُغيَّر من الإعدادات.</p>
+  </section>
+
+  <!-- ================= PREVIEW ================= -->
+  <section class="card">
+    <div class="preview-head">
+      <h2 style="margin:0">المعاينة الحية</h2>
+      <span class="muted small" id="calibState"></span>
+      <div class="spacer"></div>
+      <div class="zoom"><span class="muted small">تكبير</span><input type="range" id="zoomRange" min="50" max="200" value="100"><span class="small" id="zoomVal">100٪</span></div>
+      <button class="btn" id="btnBg" title="ارفع صورة/مسح للشيك لتظهر خلف المعاينة">خلفية من صورة الشيك</button>
+      <input type="file" id="bgFile" accept="image/*" hidden>
+    </div>
+
+    <div class="sheet-scroll">
+      <div class="sheet-wrap" id="sheetWrap">
+        <div class="sheet" id="sheet">
+          <div class="mock" id="mock">
+            <div class="stripes"></div>
+            <!-- pre-printed elements of the SAB cheque (screen only) -->
+            <div class="t" style="left:3mm;top:5.3mm;font-size:2.6mm">No.:</div>
+            <div class="t" style="left:12mm;top:4.8mm;font-size:3.4mm;font-weight:700;font-family:'Times New Roman',serif">00000000</div>
+            <div class="t" style="left:34mm;top:5.3mm;font-size:2.6mm;direction:rtl">رقم:</div>
+            <div class="t" style="left:96mm;top:4.3mm;font-size:4.2mm;font-weight:700;letter-spacing:.2mm">SAB</div>
+            <div class="t" style="left:107mm;top:4.1mm;font-size:4.2mm;font-weight:700;direction:rtl">الأول</div>
+            <div class="t" style="left:68mm;top:15.4mm;font-size:3mm">Saudi Awwal Bank</div>
+            <div class="t" style="left:96mm;top:15.2mm;font-size:3mm;direction:rtl">البنك السعودي الأول</div>
+            <div class="t" style="left:70mm;top:19.6mm;font-size:2.3mm;direction:rtl">شارع الملك عبدالعزيز - الخبر</div>
+            <div class="t" style="left:71mm;top:23.2mm;font-size:2.5mm;font-family:'Times New Roman',serif">KING ABDULAZIZ ST. BR - KHOBAR</div>
+
+            <div class="t" style="left:158mm;top:3.3mm;font-size:2.7mm">Date:</div>
+            <div class="ln" style="left:166mm;width:33mm;top:6.2mm"></div>
+            <div class="t" style="left:199.5mm;top:3.3mm;font-size:2.5mm;direction:rtl">التاريخ:</div>
+            <div class="t" style="left:158mm;top:8.9mm;font-size:2.7mm">Place of Issue:</div>
+            <div class="ln" style="left:178mm;width:21mm;top:11.7mm"></div>
+            <div class="t" style="left:199.5mm;top:9.1mm;font-size:2.5mm;direction:rtl">حرر في:</div>
+
+            <div class="t" style="left:3mm;top:34.3mm;font-size:2.7mm">Against this cheque</div>
+            <div class="t" style="left:3mm;top:37.7mm;font-size:2.7mm">pay to the order of</div>
+            <div class="ln" style="left:35mm;width:127mm;top:40.9mm"></div>
+            <div class="t" style="left:163mm;top:36.2mm;font-size:2.7mm;direction:rtl">إدفعوا بموجب هذا الشيك لأمر</div>
+
+            <div class="t" style="left:3mm;top:46.3mm;font-size:2.7mm">The amount of</div>
+            <div class="ln" style="left:28mm;width:115mm;top:50.2mm"></div>
+            <div class="t" style="left:128mm;top:45.3mm;font-size:2.7mm;direction:rtl">مبلغ وقدره</div>
+            <div class="box" style="left:145.5mm;top:43mm;width:60.5mm;height:9mm"></div>
+            <div class="t" style="left:148mm;top:44.9mm;font-size:2.4mm;direction:rtl">ريال</div>
+            <div class="t" style="left:148mm;top:48.2mm;font-size:2.3mm">SAR</div>
+
+            <div class="t" style="left:5mm;top:59.4mm;font-size:2.8mm;font-family:'Times New Roman',serif">ABDULMONEM HUMANITARIAN</div>
+            <div class="t" style="left:5mm;top:64.8mm;font-size:2.7mm">000-000000-000</div>
+            <div class="t" style="left:5mm;top:70.4mm;font-size:2.7mm;font-weight:700">IBAN: SA00 0000 0000 0000 0000 0000</div>
+            <div class="t" style="left:68mm;top:70.6mm;font-size:2.2mm">Do Not Write Below This Line &nbsp; لا تكتب تحت هذا الخط</div>
+            <div class="t" style="left:133mm;top:65.6mm;font-size:2.7mm">Signature</div>
+            <div class="ln" style="left:133mm;width:74mm;top:68.6mm"></div>
+            <div class="t" style="left:200mm;top:65.6mm;font-size:2.5mm;direction:rtl">التوقيع</div>
+            <div class="ln" style="left:0;width:209mm;top:74.2mm"></div>
+            <div class="t" style="left:40mm;top:79.4mm;font-size:3.2mm;font-family:'Courier New',monospace;letter-spacing:.6mm">00000000  3045 0421  0000000000  01</div>
+          </div>
+          <div class="content" id="content"></div>
+          <div class="rulers" id="rulersScreen" hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <span>الرمادي: ما هو مطبوع مسبقًا على الشيك (للمعاينة فقط، لا يُطبع)</span>
+      <span>الأسود: ما سيُطبع</span>
+    </div>
+
+    <!-- calibration -->
+    <div class="calib-panel" id="calibPanel" hidden>
+      <h2>معايرة المواقع <span class="muted small">(القيم بالمليمتر من الحافة العلوية اليسرى للشيك)</span></h2>
+      <div class="field-tabs" id="fieldTabs"></div>
+      <div class="calib-grid" id="calibGrid"></div>
+      <div style="display:flex;gap:18px;align-items:flex-start;margin-top:12px;flex-wrap:wrap">
+        <div>
+          <div class="muted small" style="margin-bottom:4px">تحريك الحقل المحدد (0.5 مم — مع <kbd>Shift</kbd> 0.1 مم)</div>
+          <div class="nudge">
+            <button class="c"></button><button data-n="0,-1">↑</button><button class="c"></button>
+            <button data-n="-1,0">←</button><button class="c">mm</button><button data-n="1,0">→</button>
+            <button class="c"></button><button data-n="0,1">↓</button><button class="c"></button>
+          </div>
+        </div>
+        <div style="flex:1;min-width:280px">
+          <div class="muted small" style="margin-bottom:4px">إزاحة عامة لتعويض الطابعة (تُطبّق عند الطباعة فقط)</div>
+          <div class="offset-row">
+            <label class="f">إزاحة أفقية X<input type="number" step="0.1" id="offX"></label>
+            <label class="f">إزاحة رأسية Y<input type="number" step="0.1" id="offY"></label>
+            <label class="f">مقياس أفقي ٪<input type="number" step="0.1" id="offSX"></label>
+            <label class="f">مقياس رأسي ٪<input type="number" step="0.1" id="offSY"></label>
+          </div>
+          <div class="hint">اطبع «صفحة اختبار» على ورقة A4 عادية، ثم طابق زاويتها العلوية اليسرى مع زاوية الشيك أمام الضوء أو قِس بالمسطرة: لو طلع كل شيء مزاحًا بنفس المقدار عدّل الإزاحة العامة، ولو حقل واحد فقط اسحبه بالفأرة أو عدّل أرقامه.</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnResetField">إعادة الحقل المحدد للافتراضي</button>
+        <button class="btn danger" id="btnResetAll">إعادة كل المواقع للافتراضي</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= LOG ================= -->
+<dialog id="logDlg">
+  <div class="dlg-head"><h2>سجل الشيكات المطبوعة</h2>
+    <button class="btn" id="btnCsv">تصدير CSV</button>
+    <button class="btn danger" id="btnClearLog">حذف السجل</button>
+    <button class="btn" data-close>إغلاق</button>
+  </div>
+  <div class="dlg-body">
+    <table id="logTable"><thead><tr><th>#</th><th>وقت الطباعة</th><th>رقم الشيك</th><th>تاريخ الشيك</th><th>المستفيد</th><th>المبلغ</th><th>ملاحظة</th><th></th></tr></thead><tbody></tbody></table>
+    <p class="muted small" id="logEmpty" style="margin:14px 0 0">لا توجد شيكات مسجلة بعد. بعد كل طباعة يسألك التطبيق إن كنت تريد تسجيل الشيك.</p>
+  </div>
+</dialog>
+
+<!-- ================= SETTINGS ================= -->
+<dialog id="settingsDlg">
+  <div class="dlg-head"><h2>الإعدادات</h2><button class="btn" data-close>إغلاق</button></div>
+  <div class="dlg-body">
+    <div class="settings-grid">
+      <label class="f">خط الطباعة
+        <select id="fontSelect">
+          <option>Arial</option><option>Tahoma</option><option>Segoe UI</option><option>Times New Roman</option>
+          <option>Traditional Arabic</option><option>Simplified Arabic</option><option>Sakkal Majalla</option><option>Courier New</option>
+        </select>
+      </label>
+      <label class="f">صيغة التاريخ
+        <select id="dateFormat">
+          <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+          <option value="DD-MM-YYYY">DD-MM-YYYY</option>
+          <option value="YYYY/MM/DD">YYYY/MM/DD</option>
+        </select>
+      </label>
+      <label class="f">مكان التحرير الافتراضي<input type="text" id="defPlace"></label>
+      <label class="f">نص «للمستفيد الأول»<input type="text" id="crossText"></label>
+      <label class="f">صيغة التفقيط العربي
+        <select id="arStyle">
+          <option value="std">فقط … لا غير</option>
+          <option value="plain">… فقط</option>
+        </select>
+      </label>
+      <label class="f">صيغة المبلغ رقماً
+        <select id="figStyle">
+          <option value="grouped">1,234.50</option>
+          <option value="plain">1234.50</option>
+          <option value="slash">1,234/50</option>
+        </select>
+      </label>
+      <label class="f">طريقة إدخال الشيك في الطابعة
+        <select id="feedSelect">
+          <option value="portrait-left">بالطول — الحافة اليسرى (جهة No.) تدخل أولًا</option>
+          <option value="portrait-right">بالطول — الحافة اليمنى (جهة التاريخ) تدخل أولًا</option>
+          <option value="landscape">بالعرض — الحافة الطويلة العلوية تدخل أولًا</option>
+        </select>
+      </label>
+      <label class="f">حجم ورقة الطباعة (اختر نفسه في نافذة الطباعة)
+        <select id="pageSize">
+          <option value="a4">A4 عمودي — الشيك في الزاوية العلوية اليسرى (موصى به)</option>
+          <option value="exact">مقاس الشيك بالضبط (يحتاج مقاس مخصص في التعريف)</option>
+        </select>
+      </label>
+      <label class="f">حجم الخط (تكبير/تصغير الكل): <span id="fontScaleVal"></span>٪
+        <input type="range" id="fontScaleRange" min="70" max="140" step="5">
+        <span class="small muted">يكبّر/يصغّر كل الحقول معًا. 100٪ = الحجم الأصلي.</span>
+      </label>
+      <label class="f">قوة السماكة (سلس): <span id="weightVal"></span> مم
+        <input type="range" id="weightRange" min="0" max="0.40" step="0.02">
+        <span class="small muted">حرّكه شوي شوي: يسار = أرفع، يمين = أثقل. الأساس رفيع.</span>
+      </label>
+    </div>
+    <div class="checks" style="margin-top:12px">
+      <label><input type="checkbox" id="boldChk"> خط عريض (أوضح على الطابعة النقطية)</label>
+      <label><input type="checkbox" id="thickChk"> تسميك إضافي (لو الشريط ضعيف)</label>
+      <label><input type="checkbox" id="autoLogChk"> السؤال عن تسجيل الشيك بعد كل طباعة</label>
+      <label><input type="checkbox" id="autoIncChk"> زيادة رقم الشيك تلقائيًا بعد التسجيل</label>
+    </div>
+    <h3 style="font-size:14px;margin:18px 0 8px">نسخ احتياطي للإعدادات والمواقع</h3>
+    <div class="actions" style="margin-top:0">
+      <button class="btn" id="btnExport">تصدير الإعدادات (JSON)</button>
+      <button class="btn" id="btnImport">استيراد إعدادات</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+      <button class="btn" id="btnClearBg">إزالة صورة الخلفية</button>
+      <button class="btn danger" id="btnFactory">إعادة ضبط كامل</button>
+    </div>
+    <p class="muted small">تُحفظ الإعدادات والسجل داخل المتصفح على هذا الجهاز. صدّر نسخة JSON قبل تغيير الجهاز أو المتصفح.</p>
+  </div>
+</dialog>
+
+<!-- ================= HELP ================= -->
+<dialog id="helpDlg">
+  <div class="dlg-head"><h2>دليل الإعداد والطباعة</h2><button class="btn" data-close>إغلاق</button></div>
+  <div class="dlg-body help">
+    <h3>1) إعداد تعريف الطابعة في ويندوز (مرة واحدة)</h3>
+    <ol>
+      <li>افتح <b>الإعدادات ← Bluetooth والأجهزة ← الطابعات والماسحات</b> ← <b>EPSON LQ-350</b> ← <b>تفضيلات الطباعة</b>.</li>
+      <li>حجم الورق <b>A4</b>، الاتجاه <b>Portrait / عمودي</b>، مصدر الورق <b>Manual / Sheet</b>.</li>
+      <li>جودة الطباعة: <b>LQ / Letter Quality / High</b> (وليس Draft). في Draft تطبع الطابعة الحروف بنقاط قليلة فتظهر مقطّعة.</li>
+      <li>لا حاجة لمقاس ورق مخصص: الشيك يُطبع كأنه ورقة A4 صغيرة موضوعة في الزاوية العلوية اليسرى من الصفحة. التطبيق يدير المحتوى بنفسه حسب طريقة الإدخال المختارة في الإعدادات (بالطول أو بالعرض).</li>
+    </ol>
+    <h3>طريقة إدخال الشيك</h3>
+    <ol>
+      <li><b>بالطول (الافتراضي):</b> أدخل الحافة القصيرة اليسرى (جهة رقم الشيك No.) أولًا، بحيث تكون الحافة السفلية (أرقام المايكر) ملاصقة لدليل الورق الأيسر والتاريخ ناحية اليمين. الوجه المطبوع للأسفل باتجاه لوح الدليل كما تدخل أي ورقة في هذه الطابعة. اضبط دليل الورق الأيمن على عرض الشيك (9 سم).</li>
+      <li><b>بالعرض:</b> الحافة الطويلة العلوية تدخل أولًا، والحافة القصيرة اليسرى ملاصقة لدليل الورق الأيسر.</li>
+      <li>طريقة مضمونة: اطبع صفحة الاختبار على A4، ثم ضع الشيك فوق الورقة المطبوعة بحيث تنطبق حقوله على مستطيلاتها، وأدخل الشيك في الطابعة بنفس الوضع الذي أدخلت به تلك الورقة.</li>
+      <li>غيّر الطريقة من الإعدادات ← «طريقة إدخال الشيك»، والملاحظة أسفل بيانات الشيك تذكّرك بالاتجاه الحالي.</li>
+    </ol>
+    <h3>2) إعدادات نافذة الطباعة في المتصفح (Chrome أو Edge)</h3>
+    <ol>
+      <li>الوجهة: <b>EPSON LQ-350</b>. التخطيط: <b>عمودي / Portrait</b>.</li>
+      <li>«إعدادات إضافية»: حجم الورق <b>A4</b>، الهوامش <b>بدون / None</b>، المقياس <b>100٪</b> (الافتراضي)، وأزل علامة <b>الرؤوس والتذييلات</b>.</li>
+      <li>لو ظهر الشيك في المعاينة مقلوبًا أو بالعرض فالتخطيط ليس عموديًا؛ صحّحه قبل الطباعة.</li>
+      <li>يحفظ المتصفح هذه الاختيارات للمرات القادمة.</li>
+    </ol>
+    <h3>لو الحروف تطلع مقطّعة أو متعرّجة</h3>
+    <ol>
+      <li>تأكد أن جودة الطباعة في تفضيلات الطابعة <b>LQ</b> وليس Draft، ومن المتصفح لا تختر «توفير الحبر».</li>
+      <li>اجعل الاتجاه أحادي: على لوحة الطابعة ادخل وضع الإعدادات الافتراضية واجعل <b>Print direction = Uni-D</b> (أو من تفضيلات التعريف إن وُجد الخيار).</li>
+      <li>خط عريض وحجم 3.5–4 مم من الإعدادات، والشريط جديد نسبيًا.</li>
+    </ol>
+    <h3>لو الطابعة توقفت قبل نهاية الشيك (ضوء Paper Out يرمش)</h3>
+    <ol>
+      <li>حسّاس الورق يعتبر الشيك القصير منتهيًا مبكرًا. ضع الشيك فوق ورقة A4 (زاويته العلوية اليسرى على زاوية الورقة) وثبّت أسفله بلاصق خفيف، وأدخلهما معًا؛ لا يتغير أي إعداد.</li>
+    </ol>
+    <h3>3) المعايرة (مرة واحدة)</h3>
+    <ol>
+      <li>أدخل ورقة A4 عادية (عمودية، حافتها اليسرى على دليل الورق) واضغط <b>طباعة صفحة اختبار</b>: تُطبع في الزاوية العلوية اليسرى من الورقة مسطرة بالمليمتر ومستطيلات الحقول مع بياناتها، مُدارة حسب طريقة الإدخال. يجب أن تبدأ المسطرة من زاوية الورقة نفسها.</li>
+      <li>ضع الشيك فوق الورقة بنفس الاتجاه الذي ستدخله به (بالطول: حافته اليسرى على الحافة العلوية للورقة، وحافته السفلية على الحافة اليسرى للورقة) وطابق أمام الضوء.</li>
+      <li>ضع الورقة فوق الشيك أمام الضوء. لو كل الحقول مزاحة بنفس المقدار، أدخل الفرق في <b>الإزاحة العامة X/Y</b> (مثال: طلع كل شيء أسفل بـ 2 مم ← اجعل Y = <code>-2</code>).</li>
+      <li>لو حقل واحد يحتاج تعديل، فعّل <b>وضع المعايرة</b> واسحبه بالفأرة أو عدّل أرقامه (X، Y، العرض، حجم الخط).</li>
+      <li>الطابعة لا تطبع في أول ~4 مم من أعلى الورقة، فإن انقطع سطر التاريخ من الأعلى أنزله قليلًا أو صغّر خطه.</li>
+    </ol>
+    <h3>4) الطباعة اليومية</h3>
+    <ol>
+      <li>أدخل الشيك في الطابعة (الوجه للأعلى، الحافة العلوية أولًا، الحافة اليسرى على دليل الورق) وانتظر حتى تسحبه.</li>
+      <li>عبّئ البيانات، راجع التفقيط في المعاينة، ثم <b>طباعة الشيك</b>.</li>
+      <li>بعد الطباعة يسألك التطبيق عن تسجيل الشيك في السجل ويزيد رقم الشيك تلقائيًا.</li>
+    </ol>
+    <h3>ملاحظات</h3>
+    <ol>
+      <li>خط عريض وحجم 3.5–4 مم يعطيان أوضح نتيجة على الطابعة النقطية.</li>
+      <li>الخلفية الرمادية في المعاينة للاستئناس فقط ولا تُطبع أبدًا؛ ولمعاينة أدق ارفع صورة/مسح للشيك من زر «خلفية من صورة الشيك».</li>
+      <li>لو ظهرت صفحة ثانية فارغة في المعاينة فالسبب غالبًا أن حجم الورق في نافذة الطباعة ليس 209×90.</li>
+    </ol>
+  </div>
+</dialog>
+
+<div id="afterBar">
+  <span>تم إرسال الشيك للطباعة — هل تسجّله في السجل؟</span>
+  <button class="btn primary" id="afterYes">نعم، سجّل</button>
+  <button class="btn" id="afterNo">لا</button>
+</div>
+<div id="toast"></div>
+<div id="printRoot"></div>
+
+<script>
+(() => {
+'use strict';
+const PX_PER_MM = 96 / 25.4;
+const SHEET_W = 209, SHEET_H = 90;
+const KEY = 'sabCheque.settings.v1', LOG_KEY = 'sabCheque.log.v1', BG_KEY = 'sabCheque.bg.v1';
+
+/* ---------------- defaults (mm, measured from a real SAB cheque) ---------------- */
+const DEFAULT_FIELDS = {
+  date:    { label: 'التاريخ',         x: 167,  y: 6.4,  w: 32,  size: 3.2, align: 'center', dir: 'ltr' },
+  place:   { label: 'مكان التحرير',    x: 179,  y: 11.8, w: 20,  size: 3.0, align: 'center', dir: 'rtl' },
+  payee:   { label: 'المستفيد',        x: 36,   y: 40.5, w: 125, size: 3.8, align: 'start',  dir: 'auto' },
+  words:   { label: 'المبلغ كتابةً',   x: 28.5, y: 49.8, w: 98,  size: 3.4, align: 'start',  dir: 'auto', line2: 5.2 },
+  figures: { label: 'المبلغ رقماً',    x: 156,  y: 49.1, w: 48,  size: 4.0, align: 'center', dir: 'ltr' },
+  cross:   { label: 'للمستفيد الأول',  x: 6,    y: 14,   w: 42,  size: 3.0, align: 'center', dir: 'rtl', angle: -18 },
+};
+const DEFAULT_SETTINGS = {
+  fields: JSON.parse(JSON.stringify(DEFAULT_FIELDS)),
+  offset: { x: 0, y: 0, sx: 100, sy: 100 },
+  font: 'Arial', dateFormat: 'DD/MM/YYYY', defPlace: 'الأحساء',
+  crossText: 'للمستفيد الأول فقط', arStyle: 'std', figStyle: 'grouped',
+  autoLog: true, autoInc: true, pageSize: 'a4', feed: 'portrait-left', thick: false, bold: false, ink: 175, stroke: 0, weight: 0.06, fontScale: 1,
+  form: { chequeNo: '', lang: 'ar', saudi: true, stars: false, cross: false, place: '' },
+};
+
+/* ---------------- storage ---------------- */
+const store = {
+  get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+function deepMerge(base, over) {
+  if (!over || typeof over !== 'object') return base;
+  const out = Array.isArray(base) ? base.slice() : Object.assign({}, base);
+  for (const k of Object.keys(over)) {
+    if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k]) && base[k] && typeof base[k] === 'object') out[k] = deepMerge(base[k], over[k]);
+    else out[k] = over[k];
+  }
+  return out;
+}
+let S = deepMerge(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)), store.get(KEY) || {});
+let LOG = store.get(LOG_KEY) || [];
+const save = () => store.set(KEY, S);
+const saveLog = () => store.set(LOG_KEY, LOG);
+// one-time: crisp-ink defaults (bold on, no smear overprint) while keeping the user's calibration & offsets
+if (!S.inkfix) { S.bold = true; S.thick = false; if (typeof S.ink !== 'number') S.ink = 165; S.inkfix = true; save(); }
+if (!S.inkfix2) { S.bold = true; S.ink = 175; S.stroke = 1; S.inkfix2 = true; save(); }
+if (!S.inkfix3) { S.bold = true; S.ink = 175; S.stroke = 2; S.inkfix3 = true; save(); }
+if (!S.inkfix4) { S.bold = false; S.stroke = 0; S.inkfix4 = true; save(); }  // normal weight (darkness now from the 360x180 driver setting)
+if (!S.starsoff) { if (S.form) S.form.stars = false; S.starsoff = true; save(); }  // remove protective asterisks per request
+if (!S.inkfix5) { S.stroke = 1; S.inkfix5 = true; save(); }  // slightly thicker per request (رفيع -> عادي)
+if (!S.weightfix) { S.stroke = 0; S.bold = false; S.weight = 0.06; S.weightfix = true; save(); }  // switch to smooth thin-base weight slider
+
+/* ---------------- DOM ---------------- */
+const $ = id => document.getElementById(id);
+const el = {
+  chequeNo: $('chequeNo'), date: $('dateInput'), payee: $('payeeInput'), amount: $('amountInput'), place: $('placeInput'),
+  lang: $('langSelect'), note: $('noteInput'), saudi: $('saudiChk'), stars: $('starsChk'), cross: $('crossChk'),
+  wordsPreview: $('wordsPreview'), sheet: $('sheet'), wrap: $('sheetWrap'), content: $('content'), mock: $('mock'),
+  zoom: $('zoomRange'), zoomVal: $('zoomVal'), calibPanel: $('calibPanel'), calibState: $('calibState'),
+  fieldTabs: $('fieldTabs'), calibGrid: $('calibGrid'), offX: $('offX'), offY: $('offY'), offSX: $('offSX'), offSY: $('offSY'),
+  printRoot: $('printRoot'), afterBar: $('afterBar'), toast: $('toast'), payeeList: $('payeeList'),
+};
+let mode = 'cheque', calib = false, selected = 'payee', zoom = 1, fitScale = 1;
+const measureCanvas = document.createElement('canvas').getContext('2d');
+
+/* ---------------- Arabic tafqeet ---------------- */
+const AR = {
+  ones:   ['', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'],
+  onesF:  ['', 'واحدة', 'اثنتان', 'ثلاث', 'أربع', 'خمس', 'ست', 'سبع', 'ثماني', 'تسع'],
+  teens:  ['عشرة', 'أحد عشر', 'اثنا عشر', 'ثلاثة عشر', 'أربعة عشر', 'خمسة عشر', 'ستة عشر', 'سبعة عشر', 'ثمانية عشر', 'تسعة عشر'],
+  teensF: ['عشر', 'إحدى عشرة', 'اثنتا عشرة', 'ثلاث عشرة', 'أربع عشرة', 'خمس عشرة', 'ست عشرة', 'سبع عشرة', 'ثماني عشرة', 'تسع عشرة'],
+  tens:   ['', '', 'عشرون', 'ثلاثون', 'أربعون', 'خمسون', 'ستون', 'سبعون', 'ثمانون', 'تسعون'],
+  hundreds: ['', 'مائة', 'مائتان', 'ثلاثمائة', 'أربعمائة', 'خمسمائة', 'ستمائة', 'سبعمائة', 'ثمانمائة', 'تسعمائة'],
+  // [singular, dual, dual-idafa, plural(3-10), accusative(11-99)]
+  scales: [null, ['ألف', 'ألفان', 'ألفا', 'آلاف', 'ألفاً'], ['مليون', 'مليونان', 'مليونا', 'ملايين', 'مليوناً'],
+           ['مليار', 'ملياران', 'مليارا', 'مليارات', 'ملياراً'], ['تريليون', 'تريليونان', 'تريليونا', 'تريليونات', 'تريليوناً']],
+};
+// 1..999 -> words. fem: feminine counted noun. idafa: group directly followed by the noun (مائتا بدل مائتان)
+function arGroup(n, fem, idafa) {
+  const parts = [];
+  const h = Math.floor(n / 100), r = n % 100;
+  if (h) parts.push(h === 2 && idafa && r === 0 ? 'مائتا' : AR.hundreds[h]);
+  if (r) {
+    if (r < 10) parts.push(fem ? AR.onesF[r] : AR.ones[r]);
+    else if (r < 20) parts.push(fem ? AR.teensF[r - 10] : AR.teens[r - 10]);
+    else { const u = r % 10, t = Math.floor(r / 10); parts.push(u ? (fem ? AR.onesF[u] : AR.ones[u]) + ' و' + AR.tens[t] : AR.tens[t]); }
+  }
+  return parts.join(' و');
+}
+function scaleWords(count, idx, isLast) {
+  const s = AR.scales[idx], r = count % 100;
+  if (count === 1) return s[0];
+  if (count === 2) return isLast ? s[2] : s[1];
+  if (r >= 3 && r <= 10) return arGroup(count, false, false) + ' ' + s[3];
+  if (r >= 11 && r <= 99) return arGroup(count, false, false) + ' ' + (isLast ? s[0] : s[4]);
+  return arGroup(count, false, true) + ' ' + s[0];
+}
+function arNumber(n, fem) { // integer >= 1
+  const groups = []; let x = n;
+  while (x > 0) { groups.push(x % 1000); x = Math.floor(x / 1000); }
+  const parts = [];
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const g = groups[i]; if (!g) continue;
+    const isLast = groups.slice(0, i).every(v => v === 0);
+    parts.push(i === 0 ? arGroup(g, fem, true) : scaleWords(g, i, isLast));
+  }
+  return parts.join(' و');
+}
+// noun forms: [singular, dual, plural(3-10), accusative(11-99)]
+function counted(n, forms, fem, oneWord) {
+  const r = n % 100;
+  if (n === 1) return forms[0] + ' ' + oneWord;
+  if (n === 2) return forms[1];
+  const w = arNumber(n, fem);
+  if (r >= 3 && r <= 10) return w + ' ' + forms[2];
+  if (r >= 11 && r <= 99) return w + ' ' + forms[3];
+  return w + ' ' + forms[0];
+}
+function tafqeetAr(riyals, halalas, saudi, style) {
+  const rf = saudi ? ['ريال سعودي', 'ريالان سعوديان', 'ريالات سعودية', 'ريالاً سعودياً'] : ['ريال', 'ريالان', 'ريالات', 'ريالاً'];
+  const hf = ['هللة', 'هللتان', 'هللات', 'هللة'];
+  const parts = [];
+  if (riyals > 0) parts.push(counted(riyals, rf, false, 'واحد'));
+  if (halalas > 0) parts.push(counted(halalas, hf, true, 'واحدة'));
+  if (!parts.length) parts.push('صفر ' + rf[0]);
+  const body = parts.join(' و');
+  return style === 'plain' ? body + ' فقط' : 'فقط ' + body + ' لا غير';
+}
+/* ---------------- English words ---------------- */
+const EN = { ones: ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'],
+  tens: ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'], scales: ['', 'Thousand', 'Million', 'Billion', 'Trillion'] };
+function enGroup(n) {
+  const p = []; const h = Math.floor(n / 100), r = n % 100;
+  if (h) p.push(EN.ones[h] + ' Hundred');
+  if (r < 20) { if (r) p.push(EN.ones[r]); } else { p.push(EN.tens[Math.floor(r / 10)] + (r % 10 ? '-' + EN.ones[r % 10] : '')); }
+  return p.join(' ');
+}
+function enNumber(n) {
+  if (n === 0) return 'Zero';
+  const g = []; let x = n; while (x > 0) { g.push(x % 1000); x = Math.floor(x / 1000); }
+  const p = [];
+  for (let i = g.length - 1; i >= 0; i--) if (g[i]) p.push(enGroup(g[i]) + (EN.scales[i] ? ' ' + EN.scales[i] : ''));
+  return p.join(' ');
+}
+function tafqeetEn(riyals, halalas) {
+  let s = 'Saudi Riyals ' + enNumber(riyals);
+  if (halalas > 0) s += ' and ' + enNumber(halalas) + ' Halalas';
+  return s + ' Only';
+}
+
+/* ---------------- helpers ---------------- */
+function normalizeDigits(s) { return String(s || '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/٫/g, '.').replace(/[,\s]/g, ''); }
+function parseAmount(s) {
+  const t = normalizeDigits(s); if (!t || !/^\d*(\.\d*)?$/.test(t)) return null;
+  const [a, b = ''] = t.split('.'); const riyals = parseInt(a || '0', 10); let hal = parseInt((b + '00').slice(0, 2), 10);
+  if (isNaN(riyals)) return null;
+  return { riyals, halalas: hal, total: riyals + hal / 100 };
+}
+function formatFigures(a, style) {
+  const r = a.riyals.toLocaleString('en-US'), h = String(a.halalas).padStart(2, '0');
+  if (style === 'plain') return String(a.riyals) + '.' + h;
+  if (style === 'slash') return r + '/' + h;
+  return r + '.' + h;
+}
+function formatDate(iso, fmt) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return fmt.replace('YYYY', y).replace('MM', m).replace('DD', d);
+}
+function todayISO() { const d = new Date(); const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+function fontString(sizeMm) { return (S.bold ? 'bold ' : '') + (sizeMm * PX_PER_MM) + 'px "' + S.font + '"'; }
+function textWidthMm(text, sizeMm) { measureCanvas.font = fontString(sizeMm); return measureCanvas.measureText(text).width / PX_PER_MM; }
+function toast(msg) { el.toast.textContent = msg; el.toast.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => el.toast.style.display = 'none', 2200); }
+function download(name, text, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ---------------- current values ---------------- */
+function values() {
+  const amt = parseAmount(el.amount.value);
+  const lang = el.lang.value;
+  let words = '';
+  if (amt) words = lang === 'en' ? tafqeetEn(amt.riyals, amt.halalas) : tafqeetAr(amt.riyals, amt.halalas, el.saudi.checked, S.arStyle);
+  return {
+    chequeNo: el.chequeNo.value.trim(), dateISO: el.date.value, date: formatDate(el.date.value, S.dateFormat),
+    place: el.place.value.trim(), payee: el.payee.value.trim(), amount: amt, figures: amt ? formatFigures(amt, S.figStyle) : '',
+    words, lang, stars: el.stars.checked, cross: el.cross.checked, note: el.note.value.trim(),
+  };
+}
+
+/* ---------------- field DOM ---------------- */
+function buildFields() {
+  el.content.innerHTML = '';
+  for (const key of Object.keys(S.fields)) {
+    const f = S.fields[key];
+    const d = document.createElement('div'); d.className = 'field' + (key === 'cross' ? ' cross' : ''); d.dataset.key = key; d.dataset.label = f.label;
+    d.innerHTML = key === 'words' ? '<div class="line l1"><span class="txt"></span><span class="stars"></span></div><div class="line l2"><span class="txt"></span><span class="stars"></span></div>' : '<div class="line l1"><span class="txt"></span><span class="stars"></span></div>';
+    el.content.appendChild(d);
+  }
+}
+function starsFor(text, sizeMm, widthMm, enabled) {
+  if (!enabled || !text) return '';
+  const sw = textWidthMm('*', sizeMm); const rem = widthMm - textWidthMm(text, sizeMm) - sw;
+  const n = Math.floor(rem / sw); return n > 0 ? ' ' + '*'.repeat(Math.min(n, 120)) : '';
+}
+// fits text into the field: single line (shrinking a little), then 2 lines, then shrinking further. returns {size, lines}
+function splitTwo(text, size, w) {
+  const words = text.replace(/لا غير/g, 'لا غير').split(' ');
+  let l1 = '', i = 0;
+  for (; i < words.length; i++) { const t = l1 ? l1 + ' ' + words[i] : words[i]; if (textWidthMm(t, size) <= w) l1 = t; else break; }
+  let rest = words.slice(i);
+  // avoid a lonely word on the second line
+  if (rest.length === 1 && i > 1) { const a = l1.split(' '); rest.unshift(a.pop()); l1 = a.join(' '); }
+  const l2 = rest.join(' ');
+  return (l1 && l2 && textWidthMm(l2, size) <= w) ? [l1, l2] : null;
+}
+function fscale() { return typeof S.fontScale === 'number' ? S.fontScale : 1; }
+function fitText(text, f, maxLines) {
+  const min = 2.4, step = s => Math.round((s - 0.1) * 10) / 10;
+  let size = Math.round(f.size * fscale() * 10) / 10;
+  // 1) single line, shrinking at most 0.6 mm
+  for (let s = size; s >= Math.max(min, size - 0.6); s = step(s)) if (textWidthMm(text, s) <= f.w) return { size: s, lines: [text] };
+  // 2) two lines at the nominal size, then shrinking
+  if (maxLines > 1) for (let s = size; s >= min; s = step(s)) { const ln = splitTwo(text, s, f.w); if (ln) return { size: s, lines: ln }; }
+  // 3) single line, shrinking to the minimum
+  for (let s = size; s >= min; s = step(s)) if (textWidthMm(text, s) <= f.w) return { size: s, lines: [text] };
+  return { size: min, lines: [text] };
+}
+function render() {
+  const V = values();
+  el.wordsPreview.textContent = V.words || '—';
+  const fam = '"' + S.font + '", Arial, Tahoma, sans-serif';
+  const texts = { date: V.date, place: V.place, payee: V.payee, words: V.words, figures: V.figures ? (V.stars ? '**' + V.figures + '**' : V.figures) : '', cross: V.cross ? S.crossText : '' };
+  for (const d of el.content.children) {
+    const key = d.dataset.key, f = S.fields[key], text = texts[key] || '';
+    d.style.fontFamily = fam; d.style.fontWeight = S.bold ? '700' : '400';
+    d.style.left = f.x + 'mm'; d.style.width = f.w + 'mm';
+    d.style.display = (key === 'cross' && !V.cross) ? 'none' : '';
+    const lines = d.querySelectorAll('.line');
+    if (key === 'cross') {
+      d.style.top = f.y + 'mm'; d.style.fontSize = (f.size * fscale()) + 'mm'; d.style.transform = 'rotate(' + (f.angle || 0) + 'deg)';
+      lines[0].querySelector('.txt').textContent = text; lines[0].querySelector('.stars').textContent = ''; lines[0].dir = 'rtl'; continue;
+    }
+    const fit = text ? fitText(text, f, key === 'words' ? 2 : 1) : { size: f.size, lines: [''] };
+    d.style.fontSize = fit.size + 'mm';
+    d.style.top = (f.y - 0.85 * fit.size) + 'mm';
+    d.style.height = (fit.size * 1.05) + 'mm';
+    const useStars = V.stars && (key === 'payee' || key === 'words');
+    lines.forEach((ln, i) => {
+      const t = fit.lines[i] || '';
+      ln.querySelector('.txt').textContent = t;
+      ln.querySelector('.stars').textContent = (i === fit.lines.length - 1) ? starsFor(t, fit.size, f.w, useStars) : '';
+      ln.dir = f.dir; ln.style.textAlign = f.align;
+      ln.style.display = (i > 0 && !t) ? 'none' : '';
+      if (i === 1) ln.style.top = (f.line2 || 5) + 'mm';
+    });
+  }
+  el.content.querySelectorAll('.field').forEach(d => d.classList.toggle('selected', calib && d.dataset.key === selected));
+}
+
+/* ---------------- preview scale ---------------- */
+function layoutPreview() {
+  const scroll = el.wrap.parentElement; const avail = scroll.clientWidth - 36;
+  fitScale = Math.max(0.2, avail / (SHEET_W * PX_PER_MM));
+  const s = fitScale * zoom;
+  el.wrap.style.width = (SHEET_W * PX_PER_MM * s) + 'px'; el.wrap.style.height = (SHEET_H * PX_PER_MM * s) + 'px';
+  el.sheet.style.transform = 'scale(' + s + ')';
+}
+function currentScale() { return fitScale * zoom; }
+
+/* ---------------- rulers (test page) ---------------- */
+function rulersSVG(forPrint) {
+  let s = '<svg class="rulers" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 209 90" width="209mm" height="90mm" style="position:absolute;left:0;top:0;pointer-events:none;font-family:Arial">';
+  s += '<g stroke="#000" stroke-width="0.18">';
+  for (let x = 0; x <= 209; x++) { const h = x % 10 === 0 ? 4 : x % 5 === 0 ? 2.6 : 1.4; s += '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + h + '"/>'; }
+  for (let y = 0; y <= 90; y++) { const h = y % 10 === 0 ? 4 : y % 5 === 0 ? 2.6 : 1.4; s += '<line x1="0" y1="' + y + '" x2="' + h + '" y2="' + y + '"/>'; }
+  s += '</g><g font-size="2.2" fill="#000">';
+  for (let x = 10; x < 209; x += 10) s += '<text x="' + (x + 0.5) + '" y="6.3">' + x + '</text>';
+  for (let y = 10; y < 90; y += 10) s += '<text x="4.8" y="' + (y + 0.8) + '">' + y + '</text>';
+  s += '</g>';
+  // corner marks + centre crosses every 50mm for global-offset reading
+  s += '<g stroke="#000" stroke-width="0.25" fill="none">';
+  for (const [cx, cy] of [[50, 30], [100, 30], [150, 30], [50, 60], [100, 60], [150, 60]]) s += '<line x1="' + (cx - 3) + '" y1="' + cy + '" x2="' + (cx + 3) + '" y2="' + cy + '"/><line x1="' + cx + '" y1="' + (cy - 3) + '" x2="' + cx + '" y2="' + (cy + 3) + '"/><circle cx="' + cx + '" cy="' + cy + '" r="1.2"/>';
+  s += '</g>';
+  s += '<text x="105" y="14" font-size="2.6" fill="#000" text-anchor="middle">صفحة اختبار المحاذاة — ضعها فوق الشيك أمام الضوء</text>';
+  s += '<text x="105" y="19" font-size="2.6" fill="#000" text-anchor="middle">Offset X=' + S.offset.x + ' mm, Y=' + S.offset.y + ' mm, scale ' + S.offset.sx + '% / ' + S.offset.sy + '%</text>';
+  s += '</svg>';
+  return s;
+}
+
+/* ---------------- printing ---------------- */
+// feed: how the cheque goes into the printer.
+//  landscape      : long edge across the carriage (209 wide, 90 along the feed)
+//  portrait-left  : lengthwise, cheque's LEFT short edge (No. side) enters first  -> content rotated 90° CW
+//  portrait-right : lengthwise, cheque's RIGHT short edge (date side) enters first -> content rotated 90° CCW
+const FEED_INFO = {
+  'landscape':      { page: [209, 90],  transform: 'none', label: 'بالعرض — الحافة الطويلة العلوية تدخل أولًا، والحافة القصيرة اليسرى (جهة No.) ملاصقة لدليل الورق الأيسر' },
+  'portrait-left':  { page: [90, 209],  transform: 'translate(90mm,0) rotate(90deg)', label: 'بالطول — الحافة القصيرة اليسرى (جهة No.) تدخل أولًا، الحافة السفلية (أرقام المايكر) ملاصقة لدليل الورق الأيسر، والتاريخ ناحية اليمين' },
+  'portrait-right': { page: [90, 209],  transform: 'translate(0,209mm) rotate(-90deg)', label: 'بالطول — الحافة القصيرة اليمنى (جهة التاريخ) تدخل أولًا، والحافة العلوية (سطر التاريخ) ملاصقة لدليل الورق الأيسر' },
+};
+function feedInfo() { return FEED_INFO[S.feed] || FEED_INFO['portrait-left']; }
+function applyPageSize() {
+  const fi = feedInfo();
+  const [w, h] = S.pageSize === 'exact' ? fi.page : [210, 297];
+  let st = document.getElementById('pageStyle');
+  if (!st) { st = document.createElement('style'); st.id = 'pageStyle'; document.head.appendChild(st); }
+  st.textContent = '@page{size:' + w + 'mm ' + h + 'mm;margin:0}';
+  document.documentElement.style.setProperty('--pw', w + 'mm'); document.documentElement.style.setProperty('--ph', h + 'mm');
+}
+function pageDims() { const fi = feedInfo(); return S.pageSize === 'exact' ? fi.page : [210, 297]; }
+
+// ---- canvas print: the whole cheque is drawn as ONE bitmap (rotation baked into pixels),
+//      so the dot-matrix driver prints it as a plain graphic instead of dropping a CSS-rotated page.
+const PRINT_DPI = 180;                 // LQ native dot pitch — prints solid/dark (higher res dithers to faint)
+function famStr() { return '"' + S.font + '", Arial, Tahoma, sans-serif'; }
+function dirOf(f, text) { return f.dir === 'auto' ? (/[؀-ۿ]/.test(text) ? 'rtl' : 'ltr') : f.dir; }
+function anchorX(f, dir) {
+  if (f.align === 'center') return { ta: 'center', x: f.x + f.w / 2 };
+  if (f.align === 'end') return dir === 'rtl' ? { ta: 'left', x: f.x } : { ta: 'right', x: f.x + f.w };
+  return dir === 'rtl' ? { ta: 'right', x: f.x + f.w } : { ta: 'left', x: f.x };
+}
+function drawFieldsCanvas(ctx) {
+  const V = values();
+  const texts = { date: V.date, place: V.place, payee: V.payee, words: V.words,
+    figures: V.figures ? (V.stars ? '**' + V.figures + '**' : V.figures) : '', cross: V.cross ? S.crossText : '' };
+  // weight = smooth extra stroke thickness in mm (outline added around each glyph); 0 = thin base
+  const weight = typeof S.weight === 'number' ? S.weight : 0;
+  const ink = (s, x, y) => { if (weight > 0) { ctx.lineWidth = weight; ctx.lineJoin = 'round'; ctx.miterLimit = 2; ctx.strokeText(s, x, y); } ctx.fillText(s, x, y); };
+  ctx.fillStyle = '#000'; ctx.strokeStyle = '#000';
+  for (const key of Object.keys(S.fields)) {
+    const f = S.fields[key]; const text = texts[key] || ''; if (!text) continue;
+    if (key === 'cross') {
+      ctx.save(); ctx.translate(f.x + f.w / 2, f.y); ctx.rotate((f.angle || 0) * Math.PI / 180);
+      ctx.font = (S.bold ? 'bold ' : '') + (f.size * fscale()) + 'px ' + famStr(); ctx.direction = 'rtl'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ink(text, 0, 0);
+      const tw = ctx.measureText(text).width; ctx.lineWidth = 0.3;
+      ctx.beginPath(); ctx.moveTo(-tw / 2 - 1.2, -f.size * 0.7); ctx.lineTo(tw / 2 + 1.2, -f.size * 0.7);
+      ctx.moveTo(-tw / 2 - 1.2, f.size * 0.7); ctx.lineTo(tw / 2 + 1.2, f.size * 0.7); ctx.stroke(); ctx.restore(); continue;
+    }
+    const fit = fitText(text, f, key === 'words' ? 2 : 1);
+    const dir = dirOf(f, text); ctx.direction = dir;
+    ctx.font = (S.bold ? 'bold ' : '') + fit.size + 'px ' + famStr(); ctx.textBaseline = 'alphabetic';
+    const a = anchorX(f, dir); ctx.textAlign = a.ta;
+    const useStars = V.stars && (key === 'payee' || key === 'words');
+    fit.lines.forEach((ln, i) => {
+      let s = ln; if (i === fit.lines.length - 1) s += starsFor(ln, fit.size, f.w, useStars);
+      const y = f.y + (i > 0 ? (f.line2 || 5) : 0);
+      ink(s, a.x, y);
+    });
+  }
+}
+function drawRulersCanvas(ctx) {
+  ctx.strokeStyle = '#000'; ctx.fillStyle = '#000'; ctx.direction = 'ltr'; ctx.textBaseline = 'alphabetic';
+  ctx.lineWidth = 0.18;
+  ctx.beginPath();
+  for (let x = 0; x <= 209; x++) { const h = x % 10 === 0 ? 4 : x % 5 === 0 ? 2.6 : 1.4; ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+  for (let y = 0; y <= 90; y++) { const h = y % 10 === 0 ? 4 : y % 5 === 0 ? 2.6 : 1.4; ctx.moveTo(0, y); ctx.lineTo(h, y); }
+  ctx.stroke();
+  ctx.font = '2.2px Arial'; ctx.textAlign = 'left';
+  for (let x = 10; x < 209; x += 10) ctx.fillText(String(x), x + 0.5, 6.3);
+  for (let y = 10; y < 90; y += 10) ctx.fillText(String(y), 4.8, y + 0.8);
+  ctx.lineWidth = 0.25;
+  for (const [cx, cy] of [[50, 30], [100, 30], [150, 30], [50, 60], [100, 60], [150, 60]]) {
+    ctx.beginPath(); ctx.moveTo(cx - 3, cy); ctx.lineTo(cx + 3, cy); ctx.moveTo(cx, cy - 3); ctx.lineTo(cx, cy + 3);
+    ctx.arc(cx, cy, 1.2, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.textAlign = 'center'; ctx.font = '2.6px Arial'; ctx.direction = 'rtl';
+  ctx.fillText('صفحة اختبار المحاذاة — ضعها فوق الشيك أمام الضوء', 105, 14);
+  ctx.direction = 'ltr';
+  ctx.fillText('Offset X=' + S.offset.x + ' mm, Y=' + S.offset.y + ' mm, scale ' + S.offset.sx + '% / ' + S.offset.sy + '%', 105, 19);
+}
+function renderPrintCanvas() {
+  const [pw, ph] = pageDims(); const k = PRINT_DPI / 25.4;
+  const cv = document.createElement('canvas'); cv.width = Math.round(pw * k); cv.height = Math.round(ph * k);
+  const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.setTransform(k, 0, 0, k, 0, 0);           // 1 user unit = 1 mm
+  if (S.feed === 'portrait-left') { ctx.translate(90, 0); ctx.rotate(Math.PI / 2); }
+  else if (S.feed === 'portrait-right') { ctx.translate(0, 209); ctx.rotate(-Math.PI / 2); }
+  const o = S.offset; ctx.translate(o.x, o.y); ctx.scale(o.sx / 100, o.sy / 100);   // cheque-space now
+  if (mode === 'test') drawRulersCanvas(ctx);
+  drawFieldsCanvas(ctx);
+  // 1-bit threshold: pure black/white so the dot-matrix prints solid dots, not faint dithered grey
+  const th = typeof S.ink === 'number' ? S.ink : 165;
+  const W = cv.width, H = cv.height;
+  const id = ctx.getImageData(0, 0, W, H); const d = id.data;
+  const bin = new Uint8Array(W * H);
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    bin[p] = lum < th ? 1 : 0;
+  }
+  // dilate (thicken strokes) so faint single-dot lines become solid dark strokes on the printer.
+  // radius is defined in mm (~0.085mm per level) then converted to px, so thickness is the same at any DPI
+  const lvl = typeof S.stroke === 'number' ? S.stroke : 1;
+  const r = Math.round(lvl * 0.085 * (PRINT_DPI / 25.4));
+  let fin = bin;
+  if (r > 0) {
+    const tmp = new Uint8Array(W * H), res = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) { const row = y * W; for (let x = 0; x < W; x++) { let v = 0; for (let dx = -r; dx <= r; dx++) { const xx = x + dx; if (xx >= 0 && xx < W && bin[row + xx]) { v = 1; break; } } tmp[row + x] = v; } }
+    for (let x = 0; x < W; x++) { for (let y = 0; y < H; y++) { let v = 0; for (let dy = -r; dy <= r; dy++) { const yy = y + dy; if (yy >= 0 && yy < H && tmp[yy * W + x]) { v = 1; break; } } res[y * W + x] = v; } }
+    fin = res;
+  }
+  for (let p = 0, i = 0; p < W * H; p++, i += 4) { const c = fin[p] ? 0 : 255; d[i] = d[i + 1] = d[i + 2] = c; d[i + 3] = 255; }
+  ctx.putImageData(id, 0, 0);
+  return cv;
+}
+let lastPrintDataUrl = '';
+function buildPrintImage() {
+  render(); applyPageSize();
+  const [pw, ph] = pageDims();
+  const img = document.createElement('img');
+  lastPrintDataUrl = renderPrintCanvas().toDataURL('image/png');
+  img.src = lastPrintDataUrl;
+  img.style.cssText = 'position:absolute;left:0;top:0;width:' + pw + 'mm;height:' + ph + 'mm;image-rendering:pixelated';
+  return img;
+}
+let printReady = false;
+async function doPrint() {
+  printReady = true;
+  el.printRoot.innerHTML = '';
+  const img = buildPrintImage();
+  el.printRoot.appendChild(img);
+  document.body.classList.add('printing');
+  // wait until the bitmap is fully decoded, otherwise the printer gets a blank page
+  try { await img.decode(); }
+  catch (e) { await new Promise(r => { img.onload = r; img.onerror = r; setTimeout(r, 500); }); }
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  window.print();
+}
+function buildPrint() { // fallback for browser-menu Print (rare); button/Ctrl+P use doPrint()
+  if (printReady || el.printRoot.firstChild) return;
+  el.printRoot.appendChild(buildPrintImage()); document.body.classList.add('printing');
+}
+function teardownPrint() {
+  document.body.classList.remove('printing'); el.printRoot.innerHTML = ''; printReady = false;
+  const wasCheque = mode === 'cheque'; mode = 'cheque';
+  if (wasCheque && S.autoLog && values().amount) el.afterBar.classList.add('show');
+}
+window.addEventListener('beforeprint', buildPrint);
+window.addEventListener('afterprint', teardownPrint);
+function printCheque() {
+  const V = values();
+  if (!V.amount || !V.payee) { toast('أدخل المستفيد والمبلغ أولًا'); return; }
+  mode = 'cheque'; doPrint();
+}
+function printTest() { mode = 'test'; doPrint(); }
+// preview the exact bitmap that will be sent to the printer (diagnostic)
+function showPrintPreview() {
+  mode = 'cheque'; render(); applyPageSize();
+  const url = renderPrintCanvas().toDataURL('image/png');
+  const w = window.open(''); if (!w) { toast('اسمح بالنوافذ المنبثقة'); return; }
+  const [pw, ph] = pageDims();
+  w.document.write('<title>معاينة ما سيُطبع</title><body style="margin:0;background:#555;display:flex;justify-content:center;padding:20px"><img src="' + url + '" style="width:' + pw + 'mm;height:' + ph + 'mm;background:#fff;box-shadow:0 0 20px rgba(0,0,0,.5)">');
+}
+
+/* ---------------- log ---------------- */
+function addLogEntry() {
+  const V = values();
+  LOG.unshift({ at: new Date().toISOString(), no: V.chequeNo, date: V.date, payee: V.payee, amount: V.amount ? V.amount.total : 0, figures: V.figures, words: V.words, note: V.note });
+  saveLog(); refreshPayees();
+  if (S.autoInc && /^\d+$/.test(V.chequeNo)) { const n = String(parseInt(V.chequeNo, 10) + 1).padStart(V.chequeNo.length, '0'); el.chequeNo.value = n; S.form.chequeNo = n; save(); }
+  toast('تم تسجيل الشيك في السجل');
+}
+function renderLog() {
+  const tb = $('logTable').querySelector('tbody'); tb.innerHTML = '';
+  $('logEmpty').style.display = LOG.length ? 'none' : '';
+  LOG.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    const at = new Date(r.at);
+    tr.innerHTML = '<td>' + (LOG.length - i) + '</td><td class="num">' + at.toLocaleString('en-GB') + '</td><td class="num">' + esc(r.no) + '</td><td class="num">' + esc(r.date) + '</td><td>' + esc(r.payee) + '</td><td class="num">' + esc(r.figures) + '</td><td>' + esc(r.note) + '</td>' +
+      '<td style="white-space:nowrap"><button class="btn small" data-load="' + i + '">تحميل</button> <button class="btn small danger" data-del="' + i + '">حذف</button></td>';
+    tb.appendChild(tr);
+  });
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function refreshPayees() {
+  const seen = new Set(); el.payeeList.innerHTML = '';
+  for (const r of LOG) { if (r.payee && !seen.has(r.payee)) { seen.add(r.payee); const o = document.createElement('option'); o.value = r.payee; el.payeeList.appendChild(o); if (seen.size >= 40) break; } }
+}
+function exportCsv() {
+  const rows = [['وقت الطباعة', 'رقم الشيك', 'تاريخ الشيك', 'المستفيد', 'المبلغ', 'المبلغ كتابة', 'ملاحظة']];
+  for (const r of LOG) rows.push([new Date(r.at).toLocaleString('en-GB'), r.no, r.date, r.payee, r.amount.toFixed(2), r.words, r.note]);
+  const csv = '﻿' + rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  download('cheques-log.csv', csv, 'text/csv;charset=utf-8');
+}
+
+/* ---------------- calibration UI ---------------- */
+const CAL_PROPS = [['x', 'X (مم)'], ['y', 'Y خط الأساس (مم)'], ['w', 'العرض (مم)'], ['size', 'حجم الخط (مم)']];
+function buildCalib() {
+  el.fieldTabs.innerHTML = '';
+  for (const key of Object.keys(S.fields)) {
+    const b = document.createElement('button'); b.textContent = S.fields[key].label; b.classList.toggle('on', key === selected);
+    b.onclick = () => { selected = key; buildCalib(); render(); }; el.fieldTabs.appendChild(b);
+  }
+  const f = S.fields[selected]; el.calibGrid.innerHTML = '';
+  const props = CAL_PROPS.slice();
+  if (selected === 'words') props.push(['line2', 'السطر الثاني (مم)']);
+  if (selected === 'cross') props.push(['angle', 'زاوية الدوران']);
+  for (const [p, label] of props) {
+    const l = document.createElement('label'); l.className = 'f'; l.innerHTML = label + '<input type="number" step="0.1">';
+    const inp = l.querySelector('input'); inp.value = f[p]; inp.oninput = () => { const v = parseFloat(inp.value); if (!isNaN(v)) { f[p] = v; save(); render(); } };
+    el.calibGrid.appendChild(l);
+  }
+  const l = document.createElement('label'); l.className = 'f'; l.innerHTML = 'المحاذاة<select><option value="start">بداية السطر</option><option value="center">وسط</option><option value="end">نهاية السطر</option></select>';
+  const sel = l.querySelector('select'); sel.value = f.align; sel.onchange = () => { f.align = sel.value; save(); render(); }; el.calibGrid.appendChild(l);
+  el.offX.value = S.offset.x; el.offY.value = S.offset.y; el.offSX.value = S.offset.sx; el.offSY.value = S.offset.sy;
+}
+function nudge(dx, dy, fine) {
+  const st = fine ? 0.1 : 0.5; const f = S.fields[selected]; f.x = Math.round((f.x + dx * st) * 10) / 10; f.y = Math.round((f.y + dy * st) * 10) / 10; save(); buildCalib(); render();
+}
+function setCalib(on) {
+  calib = on; el.sheet.classList.toggle('calib', on); el.calibPanel.hidden = !on; $('btnCalib').classList.toggle('active', on);
+  el.calibState.textContent = on ? 'وضع المعايرة: اسحب أي حقل بالفأرة أو استخدم الأسهم' : '';
+  if (on) buildCalib(); render();
+}
+// drag
+let drag = null;
+el.content.addEventListener('pointerdown', e => {
+  if (!calib) return; const d = e.target.closest('.field'); if (!d) return;
+  selected = d.dataset.key; buildCalib(); render();
+  const f = S.fields[selected]; drag = { px: e.clientX, py: e.clientY, x: f.x, y: f.y }; d.setPointerCapture(e.pointerId); e.preventDefault();
+});
+el.content.addEventListener('pointermove', e => {
+  if (!drag) return; const k = currentScale() * PX_PER_MM; const f = S.fields[selected];
+  f.x = Math.round((drag.x + (e.clientX - drag.px) / k) * 10) / 10; f.y = Math.round((drag.y + (e.clientY - drag.py) / k) * 10) / 10;
+  f.x = Math.max(-20, Math.min(SHEET_W, f.x)); f.y = Math.max(-20, Math.min(SHEET_H, f.y)); render();
+});
+const endDrag = () => { if (drag) { drag = null; save(); buildCalib(); } };
+el.content.addEventListener('pointerup', endDrag); el.content.addEventListener('pointercancel', endDrag);
+
+/* ---------------- background image ---------------- */
+function setBg(dataUrl) {
+  if (dataUrl) { el.mock.style.backgroundImage = 'url(' + dataUrl + ')'; el.mock.classList.add('has-bg'); }
+  else { el.mock.style.backgroundImage = ''; el.mock.classList.remove('has-bg'); }
+}
+$('bgFile').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const img = new Image(); img.onload = () => {
+    const c = document.createElement('canvas'); c.width = 2090; c.height = 900; c.getContext('2d').drawImage(img, 0, 0, 2090, 900);
+    const url = c.toDataURL('image/jpeg', 0.82); setBg(url); if (!store.set(BG_KEY, url)) toast('الصورة كبيرة، ستظهر لهذه الجلسة فقط');
+    toast('تم وضع الصورة خلف المعاينة (قصّ الصورة على حدود الشيك للحصول على أفضل تطابق)');
+  }; img.src = URL.createObjectURL(file); e.target.value = '';
+});
+
+/* ---------------- settings UI ---------------- */
+function loadSettingsUI() {
+  $('fontSelect').value = S.font; $('dateFormat').value = S.dateFormat; $('defPlace').value = S.defPlace; $('crossText').value = S.crossText;
+  $('arStyle').value = S.arStyle; $('figStyle').value = S.figStyle; $('pageSize').value = S.pageSize === 'exact' ? 'exact' : 'a4'; $('feedSelect').value = FEED_INFO[S.feed] ? S.feed : 'portrait-left'; $('boldChk').checked = S.bold; $('thickChk').checked = !!S.thick; const wv = typeof S.weight === 'number' ? S.weight : 0.06; $('weightRange').value = wv; $('weightVal').textContent = wv.toFixed(2); const fsv = Math.round((typeof S.fontScale === 'number' ? S.fontScale : 1) * 100); $('fontScaleRange').value = fsv; $('fontScaleVal').textContent = fsv; $('autoLogChk').checked = S.autoLog; $('autoIncChk').checked = S.autoInc;
+}
+function bindSettings() {
+  const map = { fontSelect: 'font', dateFormat: 'dateFormat', defPlace: 'defPlace', crossText: 'crossText', arStyle: 'arStyle', figStyle: 'figStyle', pageSize: 'pageSize', feedSelect: 'feed' };
+  for (const id in map) $(id).addEventListener('input', () => { S[map[id]] = $(id).value; save(); render(); updateFeedNote(); });
+  $('boldChk').onchange = () => { S.bold = $('boldChk').checked; save(); render(); };
+  $('thickChk').onchange = () => { S.thick = $('thickChk').checked; save(); };
+  $('weightRange').oninput = () => { S.weight = parseFloat($('weightRange').value); $('weightVal').textContent = S.weight.toFixed(2); save(); };
+  $('fontScaleRange').oninput = () => { S.fontScale = parseInt($('fontScaleRange').value, 10) / 100; $('fontScaleVal').textContent = Math.round(S.fontScale * 100); save(); render(); };
+  $('autoLogChk').onchange = () => { S.autoLog = $('autoLogChk').checked; save(); };
+  $('autoIncChk').onchange = () => { S.autoInc = $('autoIncChk').checked; save(); };
+  $('btnExport').onclick = () => download('sab-cheque-settings.json', JSON.stringify({ settings: S, log: LOG }, null, 2), 'application/json');
+  $('btnImport').onclick = () => $('importFile').click();
+  $('importFile').onchange = e => {
+    const file = e.target.files[0]; if (!file) return; const rd = new FileReader();
+    rd.onload = () => { try { const j = JSON.parse(rd.result); if (j.settings) S = deepMerge(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)), j.settings); if (Array.isArray(j.log) && (!LOG.length || confirm('استبدال السجل الحالي بالسجل الموجود في الملف؟'))) LOG = j.log; save(); saveLog(); init(false); toast('تم الاستيراد'); } catch (err) { toast('ملف غير صالح'); } };
+    rd.readAsText(file); e.target.value = '';
+  };
+  $('btnClearBg').onclick = () => { store.del(BG_KEY); setBg(null); };
+  $('btnFactory').onclick = () => { if (confirm('إعادة ضبط كل الإعدادات والمواقع؟ (السجل يبقى)')) { store.del(KEY); S = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)); init(false); } };
+}
+
+/* ---------------- events ---------------- */
+function updateFeedNote() {
+  const fi = feedInfo();
+  $('feedNote').innerHTML = '<b>إدخال الشيك:</b> ' + fi.label + '. الوجه المطبوع للأسفل باتجاه لوح دليل الورق (كما في دليل إبسون)، والحافة الجانبية ملاصقة لدليل الورق الأيسر.';
+}
+function persistForm() {
+  S.form = { chequeNo: el.chequeNo.value, lang: el.lang.value, saudi: el.saudi.checked, stars: el.stars.checked, cross: el.cross.checked, place: el.place.value }; save();
+}
+['chequeNo', 'date', 'payee', 'amount', 'place', 'lang', 'note', 'saudi', 'stars', 'cross'].forEach(k => { el[k].addEventListener('input', () => { render(); persistForm(); }); el[k].addEventListener('change', () => { render(); persistForm(); }); });
+el.amount.addEventListener('blur', () => { const a = parseAmount(el.amount.value); if (a) { el.amount.value = a.riyals.toLocaleString('en-US') + '.' + String(a.halalas).padStart(2, '0'); render(); } });
+el.zoom.addEventListener('input', () => { zoom = el.zoom.value / 100; el.zoomVal.textContent = el.zoom.value + '٪'; layoutPreview(); });
+window.addEventListener('resize', layoutPreview);
+$('btnPrint').onclick = printCheque; $('btnPrint2').onclick = printCheque; $('btnTest').onclick = printTest; $('btnPreview').onclick = showPrintPreview;
+$('btnCalib').onclick = () => setCalib(!calib);
+$('btnBg').onclick = () => $('bgFile').click();
+$('btnClear').onclick = () => { el.payee.value = ''; el.amount.value = ''; el.note.value = ''; el.date.value = todayISO(); render(); };
+$('btnLog').onclick = () => { renderLog(); $('logDlg').showModal(); };
+$('btnSettings').onclick = () => { loadSettingsUI(); $('settingsDlg').showModal(); };
+$('btnHelp').onclick = () => $('helpDlg').showModal();
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
+$('btnCsv').onclick = exportCsv;
+$('btnClearLog').onclick = () => { if (confirm('حذف كل السجل نهائيًا؟')) { LOG = []; saveLog(); renderLog(); refreshPayees(); } };
+$('logTable').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.del != null) { LOG.splice(+b.dataset.del, 1); saveLog(); renderLog(); }
+  if (b.dataset.load != null) { const r = LOG[+b.dataset.load]; el.payee.value = r.payee; el.amount.value = r.amount.toFixed(2); el.note.value = r.note || ''; render(); $('logDlg').close(); toast('تم تحميل بيانات الشيك (رقم الشيك لم يتغير)'); }
+});
+$('afterYes').onclick = () => { el.afterBar.classList.remove('show'); addLogEntry(); };
+$('afterNo').onclick = () => el.afterBar.classList.remove('show');
+document.querySelectorAll('.nudge button[data-n]').forEach(b => b.onclick = e => { const [dx, dy] = b.dataset.n.split(',').map(Number); nudge(dx, dy, e.shiftKey); });
+$('btnResetField').onclick = () => { S.fields[selected] = JSON.parse(JSON.stringify(DEFAULT_FIELDS[selected])); save(); buildCalib(); render(); };
+$('btnResetAll').onclick = () => { if (confirm('إعادة كل مواقع الحقول والإزاحات للافتراضي؟')) { S.fields = JSON.parse(JSON.stringify(DEFAULT_FIELDS)); S.offset = { x: 0, y: 0, sx: 100, sy: 100 }; save(); buildFields(); buildCalib(); render(); } };
+[['offX', 'x'], ['offY', 'y'], ['offSX', 'sx'], ['offSY', 'sy']].forEach(([id, k]) => $(id).addEventListener('input', () => { const v = parseFloat($(id).value); if (!isNaN(v)) { S.offset[k] = v; save(); } }));
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); printCheque(); return; }
+  if (!calib || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  const m = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key]; if (m) { e.preventDefault(); nudge(m[0], m[1], e.shiftKey); }
+});
+bindSettings();
+
+/* ---------------- init ---------------- */
+function init(first) {
+  buildFields();
+  el.chequeNo.value = S.form.chequeNo || ''; el.lang.value = S.form.lang || 'ar'; el.saudi.checked = !!S.form.saudi; el.stars.checked = !!S.form.stars; el.cross.checked = !!S.form.cross;
+  if (first) { el.date.value = todayISO(); el.place.value = S.form.place || S.defPlace; }
+  if (!el.place.value) el.place.value = S.defPlace;
+  const bg = store.get(BG_KEY); if (bg) setBg(bg);
+  refreshPayees(); layoutPreview(); if (calib) buildCalib(); render(); updateFeedNote();
+}
+init(true);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+window.__sab = { tafqeetAr, tafqeetEn, parseAmount, version: '1.0' };
+})();
+</script>
+</body>
+</html>
