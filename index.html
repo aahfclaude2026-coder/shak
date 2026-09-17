@@ -448,11 +448,11 @@ const KEY = 'sabCheque.settings.v1', LOG_KEY = 'sabCheque.log.v1', BG_KEY = 'sab
 
 /* ---------------- defaults (mm, measured from a real SAB cheque) ---------------- */
 const DEFAULT_FIELDS = {
-  date:    { label: 'التاريخ',         x: 167,  y: 6.4,  w: 32,  size: 3.2, align: 'center', dir: 'ltr' },
-  place:   { label: 'مكان التحرير',    x: 179,  y: 11.8, w: 20,  size: 3.0, align: 'center', dir: 'rtl' },
-  payee:   { label: 'المستفيد',        x: 36,   y: 40.5, w: 125, size: 3.8, align: 'start',  dir: 'auto' },
-  words:   { label: 'المبلغ كتابةً',   x: 28.5, y: 49.8, w: 98,  size: 3.4, align: 'start',  dir: 'auto', line2: 5.2 },
-  figures: { label: 'المبلغ رقماً',    x: 156,  y: 49.1, w: 48,  size: 4.0, align: 'center', dir: 'ltr' },
+  date:    { label: 'التاريخ',         x: 167,  y: 5.6,  w: 32,  size: 3.2, align: 'center', dir: 'ltr' },
+  place:   { label: 'مكان التحرير',    x: 179,  y: 10.7, w: 20,  size: 3.0, align: 'center', dir: 'rtl' },
+  payee:   { label: 'المستفيد',        x: 36,   y: 40.6, w: 125, size: 3.8, align: 'start',  dir: 'auto' },
+  words:   { label: 'المبلغ كتابةً',   x: 28.5, y: 48.5, w: 98,  size: 3.4, align: 'start',  dir: 'auto', line2: 5.2 },
+  figures: { label: 'المبلغ رقماً',    x: 149,  y: 48.6, w: 54,  size: 4.0, align: 'center', dir: 'ltr' },
   cross:   { label: 'للمستفيد الأول',  x: 6,    y: 14,   w: 42,  size: 3.0, align: 'center', dir: 'rtl', angle: -18 },
 };
 const DEFAULT_SETTINGS = {
@@ -491,6 +491,7 @@ if (!S.inkfix4) { S.bold = false; S.stroke = 0; S.inkfix4 = true; save(); }  // 
 if (!S.starsoff) { if (S.form) S.form.stars = false; S.starsoff = true; save(); }  // remove protective asterisks per request
 if (!S.inkfix5) { S.stroke = 1; S.inkfix5 = true; save(); }  // slightly thicker per request (رفيع -> عادي)
 if (!S.weightfix) { S.stroke = 0; S.bold = false; S.weight = 0.06; S.weightfix = true; save(); }  // switch to smooth thin-base weight slider
+if (!S.fieldscal2) { S.fields = JSON.parse(JSON.stringify(DEFAULT_FIELDS)); S.fieldscal2 = true; save(); }  // lock in positions measured from the real cheque
 
 /* ---------------- DOM ---------------- */
 const $ = id => document.getElementById(id);
